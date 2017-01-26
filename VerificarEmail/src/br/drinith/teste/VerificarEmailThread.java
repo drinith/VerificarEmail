@@ -17,18 +17,18 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
-public class VerificarEmail {
+public class VerificarEmailThread implements Runnable{
 
-
+	public Email email;
 	public static ArrayList<Email>listEmail = new ArrayList<Email>();
 	
 	
-	
-	public static void testarEmail(Email email) {
+	@Override
+	public void run() {
 		// TODO Auto-generated method stub
 		//System.out.println("Email :"+email.endereco+" "+email.existe);
-		listEmail.add(new Email(email.nome,email.endereco, VerificarEmail.isAddressValid(email)));
-	
+		listEmail.add(new Email(email.endereco, VerificarEmailThread.isAddressValid(email)));
+		System.out.println(listEmail.size());
 	
 	}
 	

@@ -2,12 +2,16 @@ package br.drinith.teste;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -16,43 +20,202 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
-import br.drinith.teste.src.br.com.ping.Ping;
+import com.csvreader.CsvReader;
+import com.csvreader.CsvWriter;
 
 public class TesteVerificarEmail {
 
+	private static int hear(BufferedReader in) throws IOException {
+		String line = null;
+		int res = 0;
 
-	public static void main(String args[]) {
-	    String testData[] = { "teste@gmail.com" };
-	    System.out.println(testData.length);
-	    
-	    VerificarEmail vEmail = new VerificarEmail();
-	    
-	    Thread t = null;  
-		
-		for (int i = 0; i < testData.length; i++) {
-					
-			VerificarEmail vEmail = new VerificarEmail();			
-			
-			p.endereco = valorIP;
-			t = new Thread(p);
-			t.start();
-		
+		while ((line = in.readLine()) != null) {
+			String pfx = line.substring(0, 3);
+			try {
+				res = Integer.parseInt(pfx);
+			} catch (Exception ex) {
+				res = -1;
+			}
+			if (line.charAt(3) != '-')
+				break;
 		}
-		
-		synchronized (t) {
-			try{
-                  System.out.println("Aguardando o b completar...");
-                  t.wait();
-              }catch(InterruptedException e){
-                  e.printStackTrace();
-              }
-		}
-	    
-	    
-	    for (int ctr = 0; ctr < testData.length; ctr++) {
-	        System.out.println(testData[ctr] + " is valid? " + isAddressValid(testData[ctr]));
-	    }
-	    return;
+
+		return res;
 	}
-	
+
+	private static void say(BufferedWriter wr, String text) throws IOException {
+		wr.write(text + "\r\n");
+		wr.flush();
+
+		return;
+	}
+
+	private static ArrayList getMX(String hostName) throws NamingException {
+		// Perform a DNS lookup for MX records in the domain
+		Hashtable env = new Hashtable();
+		env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+		DirContext ictx = new InitialDirContext(env);
+		Attributes attrs = ictx.getAttributes(hostName, new String[] { "MX" });
+		Attribute attr = attrs.get("MX");
+
+		// if we don't have an MX record, try the machine itself
+		if ((attr == null) || (attr.size() == 0)) {
+			attrs = ictx.getAttributes(hostName, new String[] { "A" });
+			attr = attrs.get("A");
+			if (attr == null)
+				throw new NamingException("No match for name '" + hostName + "'");
+		}
+
+		// Huzzah! we have machines to try. Return them as an array list
+		// NOTE: We SHOULD take the preference into account to be absolutely
+		// correct. This is left as an exercise for anyone who cares.
+		ArrayList res = new ArrayList();
+		NamingEnumeration en = attr.getAll();
+
+		while (en.hasMore()) {
+			String x = (String) en.next();
+			String f[] = x.split(" ");
+			if (f[1].endsWith("."))
+				f[1] = f[1].substring(0, (f[1].length() - 1));
+			res.add(f[1]);
+		}
+		return res;
+	}
+
+	public static boolean isAddressValid(String address) {
+		// Find the separator for the domain name
+		int pos = address.indexOf('@');
+
+		// If the address does not contain an '@', it's not valid
+		if (pos == -1)
+			return false;
+
+		// Isolate the domain/machine name and get a list of mail exchangers
+		String domain = address.substring(++pos);
+		ArrayList mxList = null;
+		try {
+			mxList = getMX(domain);
+		} catch (NamingException ex) {
+			return false;
+		}
+
+		// Just because we can send mail to the domain, doesn't mean that the
+		// address is valid, but if we can't, it's a sure sign that it isn't
+		if (mxList.size() == 0)
+			return false;
+
+		// Now, do the SMTP validation, try each mail exchanger until we get
+		// a positive acceptance. It *MAY* be possible for one MX to allow
+		// a message [store and forwarder for example] and another [like
+		// the actual mail server] to reject it. This is why we REALLY ought
+		// to take the preference into account.
+		for (int mx = 0; mx < mxList.size(); mx++) {
+			boolean valid = false;
+			try {
+				int res;
+				Socket skt = new Socket((String) mxList.get(mx), 25);
+				BufferedReader rdr = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+				BufferedWriter wtr = new BufferedWriter(new OutputStreamWriter(skt.getOutputStream()));
+
+				res = hear(rdr);
+				if (res != 220)
+					throw new Exception("Invalid header");
+				say(wtr, "EHLO orbaker.com");
+
+				res = hear(rdr);
+				if (res != 250)
+					throw new Exception("Not ESMTP");
+
+				// validate the sender address
+				say(wtr, "MAIL FROM: <felpmel@gmail.com>");
+				res = hear(rdr);
+				if (res != 250)
+					throw new Exception("Sender rejected");
+
+				say(wtr, "RCPT TO: <" + address + ">");
+				res = hear(rdr);
+
+				// be polite
+				say(wtr, "RSET");
+				hear(rdr);
+				say(wtr, "QUIT");
+				hear(rdr);
+				if (res != 250)
+					throw new Exception("Address is not valid!");
+
+				valid = true;
+				rdr.close();
+				wtr.close();
+				skt.close();
+			} catch (Exception ex) {
+				// Do nothing but try next host
+			} finally {
+				if (valid)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	public static void main(String args[]) throws IOException {
+
+		String nome;
+		String email;
+		CsvReader cvs = new CsvReader("C:\\Users\\Felipe\\Desktop\\CadastroTotal.csv");
+
+		cvs.readHeaders();
+
+		List<Email> listEmail = new ArrayList<Email>();
+
+		while (cvs.readRecord()) {
+			nome = cvs.get("Nome");
+			email = cvs.get("E-mail");
+
+			listEmail.add(new Email(nome, email));
+
+			// perform program logic here
+
+		}
+
+		cvs.close();
+
+		String outputFile = "C:\\Users\\Felipe\\Desktop\\users.csv";
+
+		// before we open the file check to see if it already exists
+		boolean alreadyExists = new File(outputFile).exists();
+		try {
+			// use FileWriter constructor that specifies open for appending
+			CsvWriter csvOutput = new CsvWriter(new FileWriter(outputFile, true), ',');
+
+			for (int ctr = 0; ctr < 100; ctr++) {
+
+				// if the file didn't already exist then we need to write out
+				// the header line
+				if (!alreadyExists) {
+					csvOutput.write("name");
+					csvOutput.write("email");
+					csvOutput.endRecord();
+				}
+
+				// else assume that the file already has the correct header line
+
+				// write out a few records e se o email existir
+				if (isAddressValid(listEmail.get(ctr).endereco)) {
+					csvOutput.write(listEmail.get(ctr).nome);
+					csvOutput.write(listEmail.get(ctr).endereco);
+					csvOutput.endRecord();
+				}
+
+			}
+
+
+
+			csvOutput.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 }
+
