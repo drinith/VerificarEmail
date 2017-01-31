@@ -12,10 +12,10 @@ public class TesteVerificarEmailThread {
 
 	public static void main(String args[]) throws IOException {
 		
-		VerificarEmailThread vEmail ;
-		String nome ;
+		String nome;
 		String email;
-		CsvReader cvs = new CsvReader("C:\\Users\\Felipe\\Desktop\\CadastroTotal.csv");
+		String path = "C:\\Users\\Instrutor\\Desktop\\";
+		CsvReader cvs = new CsvReader(path+"cadastro.csv");
 		
 		cvs.readHeaders();
 		
@@ -35,22 +35,29 @@ public class TesteVerificarEmailThread {
 		cvs.close();
 	    
 	 
-	    
+	    VerificarEmailThread vEmail;
   
-		
-		for (int i = 0; i < 50; i++) {
+	    Thread[] t = new Thread[listEmail.size()];
+		for (int i = 0; i < listEmail.size(); i++) {
 				
 			vEmail = new VerificarEmailThread();
 			vEmail.email = listEmail.get(i);
-			Thread t = new Thread(vEmail);
-			t.start();
+			t[i] = new Thread(vEmail);
+			t[i].start();
 			
-			
+		
+			System.out.println("Contagem "+i);
 		}
-		
+		for (Thread thread : t) {
+			try {
+				thread.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	
-		
-	    
+	
 	    
 	    for (int ctr = 0; ctr < VerificarEmailThread.listEmail.size(); ctr++) {
 	        System.out.println(VerificarEmailThread.listEmail.get(ctr).endereco +
