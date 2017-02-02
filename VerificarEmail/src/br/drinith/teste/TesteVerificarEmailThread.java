@@ -35,20 +35,26 @@ public class TesteVerificarEmailThread {
 		cvs.close();
 	    
 	 
-	    
+		Thread t= null;
   
 		
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i <10; i++) {
 				
 			vEmail = new VerificarEmailThread();
 			vEmail.email = listEmail.get(i);
-			Thread t = new Thread(vEmail);
+		    t = new Thread(vEmail);
 			t.start();
 			
-			
+			System.out.print(i);
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
-	
+		
 		
 	    
 	    
