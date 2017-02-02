@@ -23,6 +23,8 @@ import javax.naming.directory.InitialDirContext;
 import com.csvreader.CsvReader;
 import com.csvreader.CsvWriter;
 
+import br.drinith.teste.Email;
+
 public class TesteVerificarEmail {
 
 	private static int hear(BufferedReader in) throws IOException {
@@ -161,7 +163,7 @@ public class TesteVerificarEmail {
 
 		String nome;
 		String email;
-		String path = "C:\\Users\\Instrutor\\Desktop\\";
+		String path = "C:\\Users\\Felipe\\Desktop\\";
 		CsvReader cvs = new CsvReader(path+"cadastro.csv");
 
 		cvs.readHeaders();

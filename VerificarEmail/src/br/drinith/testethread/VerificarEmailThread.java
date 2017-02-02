@@ -1,4 +1,4 @@
-package br.drinith.teste;
+package br.drinith.testethread;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -27,7 +27,7 @@ public class VerificarEmailThread implements Runnable{
 	public void run() {
 		// TODO Auto-generated method stub
 		//System.out.println("Email :"+email.endereco+" "+email.existe);
-		listEmail.add(new Email(email.endereco, VerificarEmailThread.isAddressValid(email)));
+		listEmail.add(new Email(email.getNome(), email.getEndereco(), VerificarEmailThread.isAddressValid(email.getEndereco())));
 		
 	
 	}
@@ -89,16 +89,16 @@ public class VerificarEmailThread implements Runnable{
 		return res;
 	}
 
-	public static boolean isAddressValid(Email email2) {
+	public static boolean isAddressValid(String address) {
 		// Find the separator for the domain name
-		int pos = email2.getEndereco().indexOf('@');
+		int pos = address.indexOf('@');
 
 		// If the address does not contain an '@', it's not valid
 		if (pos == -1)
 			return false;
 
 		// Isolate the domain/machine name and get a list of mail exchangers
-		String domain = email2.getEndereco().substring(++pos);
+		String domain = address.substring(++pos);
 		ArrayList mxList = null;
 		try {
 			mxList = getMX(domain);
@@ -139,7 +139,7 @@ public class VerificarEmailThread implements Runnable{
 				if (res != 250)
 					throw new Exception("Sender rejected");
 
-				say(wtr, "RCPT TO: <" + email2 + ">");
+				say(wtr, "RCPT TO: <" + address + ">");
 				res = hear(rdr);
 
 				// be polite

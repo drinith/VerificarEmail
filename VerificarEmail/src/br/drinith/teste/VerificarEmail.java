@@ -17,6 +17,8 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import br.drinith.teste.Email;
+
 public class VerificarEmail {
 
 

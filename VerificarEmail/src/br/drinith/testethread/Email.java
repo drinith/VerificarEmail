@@ -1,11 +1,11 @@
-package br.drinith.teste;
+package br.drinith.testethread;
 
 public class Email {
 
-	String nome;
+	private String nome;
 	
-	String endereco;
-	boolean existe;
+	private String  endereco;
+	private boolean existe;
 	
 	public Email(String nome,String endereco) {
 		super();
@@ -15,23 +15,12 @@ public class Email {
 	}
 	
 	
-	
 	public Email(String endereco, boolean existe) {
 		super();
 		this.endereco = endereco;
 		this.existe = existe;
 	}
 	
-	
-	public String getExiste() {
-		String existe= "false";
-		if(this.isExiste()){
-			existe= "true";
-		}
-		
-		
-		return existe;
-	}
 	
 	public Email(String endereco) {
 		super();
@@ -41,6 +30,9 @@ public class Email {
 	
 	public Email(String nome2, String endereco2, boolean addressValid) {
 		// TODO Auto-generated constructor stub
+		this.nome = nome2;
+		this.endereco = endereco2;
+		this.existe = addressValid;
 	}
 
 
@@ -48,6 +40,16 @@ public class Email {
 		return nome;
 	}
 
+
+	public String getExiste() {
+		String existe= "false";
+		if(this.isExiste()){
+			existe= "true";
+		}
+		
+		
+		return existe;
+	}
 
 	public void setNome(String nome) {
 		this.nome = nome;
