@@ -161,7 +161,8 @@ public class TesteVerificarEmail {
 
 		String nome;
 		String email;
-		CsvReader cvs = new CsvReader("C:\\Users\\Felipe\\Desktop\\CadastroTotal.csv");
+		String path = "C:\\Users\\Instrutor\\Desktop\\";
+		CsvReader cvs = new CsvReader(path+"cadastro.csv");
 
 		cvs.readHeaders();
 
@@ -179,7 +180,7 @@ public class TesteVerificarEmail {
 
 		cvs.close();
 
-		String outputFile = "C:\\Users\\Felipe\\Desktop\\users.csv";
+		String outputFile = path+"users.csv";
 
 		// before we open the file check to see if it already exists
 		boolean alreadyExists = new File(outputFile).exists();
@@ -187,7 +188,7 @@ public class TesteVerificarEmail {
 			// use FileWriter constructor that specifies open for appending
 			CsvWriter csvOutput = new CsvWriter(new FileWriter(outputFile, true), ',');
 
-			for (int ctr = 0; ctr < 100; ctr++) {
+			for (int ctr = 0; ctr < 9; ctr++) {
 
 				// if the file didn't already exist then we need to write out
 				// the header line
@@ -201,6 +202,7 @@ public class TesteVerificarEmail {
 
 				// write out a few records e se o email existir
 				if (isAddressValid(listEmail.get(ctr).endereco)) {
+					System.out.println("Endereço válido "+listEmail.get(ctr).endereco);
 					csvOutput.write(listEmail.get(ctr).nome);
 					csvOutput.write(listEmail.get(ctr).endereco);
 					csvOutput.endRecord();
@@ -209,7 +211,7 @@ public class TesteVerificarEmail {
 			}
 
 
-
+			System.out.println("Fim do processo ");
 			csvOutput.close();
 		} catch (IOException e) {
 			e.printStackTrace();
